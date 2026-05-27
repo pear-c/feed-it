@@ -223,4 +223,3 @@ docker compose restart n8n
 - [workflow-collect.md](workflow-collect.md) — Workflow A 설계서
 - [workflow-summarize.md](workflow-summarize.md) — Workflow B 설계서
 - [workflow-error-monitor.md](workflow-error-monitor.md) — Workflow C 설계서
-- 벤치마크 원글: <https://insight.infograb.net/blog/2025/12/17/n8n-devops-contents/>
