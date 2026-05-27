@@ -1,0 +1,82 @@
+# feed-it 수집 대상 채널
+#
+# 채널 추가 시 절차:
+#   1. robots.txt + 이용약관 확인 (자동 수집 허용 여부)
+#   2. enabled: false 로 먼저 등록
+#   3. n8n 에서 Firecrawl 수동 테스트 1회 → 정상 응답이면 enabled: true 로 commit
+#
+# 스키마 (conventions.md §2.2)
+#   - name   : kebab-case, 유일 (워크플로·로그·Slack 본문 식별자)
+#   - url    : https only, 로그인 필요 없는 공개 URL
+#   - type   : blog | newsletter | rss
+#   - domain : ai | devops | kr_tech
+#   - enabled: true | false (false면 워크플로가 skip)
+#
+# 현재 9 채널 (AI 4 + DevOps 3 + kr_tech 2 / newsletter 0개).
+# newsletter 추가는 Week 2 가치 검증 후 (kube-weekly · import-ai 등 후보).
+
+# ─────────────────────────────────────────────
+# AI / LLM / 에이전트 (4)
+# ─────────────────────────────────────────────
+
+- name: anthropic-news
+  url: https://www.anthropic.com/news
+  type: blog
+  domain: ai
+  enabled: false
+
+- name: openai-news
+  url: https://openai.com/news/
+  type: blog
+  domain: ai
+  enabled: false
+
+- name: simon-willison
+  url: https://simonwillison.net/
+  type: blog
+  domain: ai
+  enabled: false
+
+- name: huggingface-blog
+  url: https://huggingface.co/blog
+  type: blog
+  domain: ai
+  enabled: false
+
+# ─────────────────────────────────────────────
+# DevOps / 인프라 / 클라우드 (3)
+# ─────────────────────────────────────────────
+
+- name: cncf-blog
+  url: https://www.cncf.io/blog/
+  type: blog
+  domain: devops
+  enabled: false
+
+- name: hashicorp-blog
+  url: https://www.hashicorp.com/blog
+  type: blog
+  domain: devops
+  enabled: false
+
+- name: aws-news
+  url: https://aws.amazon.com/blogs/aws/
+  type: blog
+  domain: devops
+  enabled: false
+
+# ─────────────────────────────────────────────
+# 한국 IT / 채용 / 스타트업 (2)
+# ─────────────────────────────────────────────
+
+- name: woowahan-tech
+  url: https://techblog.woowahan.com/
+  type: blog
+  domain: kr_tech
+  enabled: false
+
+- name: toss-tech
+  url: https://toss.tech/
+  type: blog
+  domain: kr_tech
+  enabled: false
