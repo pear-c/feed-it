@@ -1,0 +1,24 @@
+# 시크릿
+.env
+.env.*
+!.env.example
+
+# n8n 영구 볼륨
+data/
+
+# 워크플로 백업
+workflows/*.bak
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node (Week 2+ Python 도입 시 venv 등 추가)
+node_modules/
+__pycache__/
+*.pyc
+.venv/
