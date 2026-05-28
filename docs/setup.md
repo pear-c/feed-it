@@ -216,7 +216,9 @@ Week 1 PoC는 Firecrawl·Anthropic 모두 **HTTP Request 노드로 직접 호출
 
 ## 8. n8n credential 4종 등록
 
-좌측 `Credentials` → `+ Add Credential`
+좌측 `Credentials` 메뉴 → 새 credential 추가
+
+> ⚠️ 새 credential 만드는 버튼 이름은 n8n 버전에 따라 다름: `+ Add Credential` · `Create Credential` · `+` 단독 등. **Credentials 페이지에서 가장 눈에 띄는 추가/생성 버튼**을 누르면 됨. 이하 모든 §8.X는 그 modal/페이지의 type 선택 → 필드 입력 → 저장 흐름.
 
 ### 8.1 Anthropic
 
@@ -241,11 +243,11 @@ Week 1 PoC는 Firecrawl·Anthropic 모두 **HTTP Request 노드로 직접 호출
 
 Firecrawl은 워크플로에서 **HTTP Request 노드로 직접 호출** (`https://api.firecrawl.dev/v1/scrape`). credential은 n8n 기본의 `Header Auth`로 등록.
 
-- `+ Add Credential` → 검색에 `Header Auth` 입력 → `Header Auth` 선택
+- 새 credential 추가 → type 검색에 `Header Auth` 입력 → `Header Auth` 선택
 - **Name** (credential 이름): `Firecrawl API` (워크플로에서 이 이름으로 골라쓰게 됨)
 - **Header Name**: `Authorization`
 - **Header Value**: `Bearer fc-...` (`.env`의 `FIRECRAWL_API_KEY` 값에 `Bearer ` prefix 붙여서)
-- Save
+- 저장 (`Save` 또는 `Create`)
 
 > Test 버튼은 Header Auth credential 자체에는 없음. §9 connectivity 테스트에서 임시 워크플로로 HTTP Request 1회 호출해 검증.
 
@@ -262,6 +264,8 @@ Firecrawl은 워크플로에서 **HTTP Request 노드로 직접 호출** (`https
 임시 워크플로 1개를 만들어 **4종 credential·외부 호출이 정말 동작하는지 확인**.
 
 워크플로 생성 → Manual Trigger 추가 → 아래 4개 노드를 한 번에 하나씩 추가하고 각각 Execute로 단독 검증.
+
+> ⚠️ **메뉴 텍스트 주의**: n8n 노드의 필드명(Resource·Operation·옵션 이름)은 버전마다 미세하게 다를 수 있음 (예: `Send a Message` ↔ `Post a Message` ↔ `Send Message`, `Get Many` ↔ `Get All` ↔ `List`). 정확한 텍스트가 안 보이면 **각 핑의 의도와 PASS 기준**을 기준으로 가장 가까운 옵션을 골라 사용.
 
 ### 9.1 Slack 핑
 
