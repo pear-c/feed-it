@@ -259,13 +259,77 @@ Firecrawl은 워크플로에서 **HTTP Request 노드로 직접 호출** (`https
 
 ## 9. 첫 connectivity 테스트 (워크플로 만들기 전)
 
-n8n에서 임시 워크플로 1개를 만들어 4종 credential이 정말 동작하는지 확인.
+임시 워크플로 1개를 만들어 **4종 credential·외부 호출이 정말 동작하는지 확인**.
 
-1. `+ Workflow` → 빈 워크플로
-2. Manual Trigger → Slack 노드 (`Post Message` to `#feed-it-alerts`, text: "셋업 테스트")
-3. Execute → Slack 채널에 "셋업 테스트" 도착 확인
-4. 같은 워크플로에 Notion 노드 (`Database — Get Many`) 추가 → 빈 DB에서 Execute → 에러 없이 0건 반환 확인
-5. 임시 워크플로 삭제
+워크플로 생성 → Manual Trigger 추가 → 아래 4개 노드를 한 번에 하나씩 추가하고 각각 Execute로 단독 검증.
+
+### 9.1 Slack 핑
+
+| 필드 | 값 |
+|------|---|
+| Node | **Slack** |
+| Resource | Message |
+| Operation | Send a Message (또는 Post) |
+| Channel ID | `.env`의 `SLACK_ALERTS_CHANNEL_ID` 값 직접 입력 |
+| Text | `feed-it 셋업 테스트` |
+| Credential | §8.3에서 등록한 Slack |
+
+✅ **PASS 기준**: `#feed-it-alerts` 채널에 메시지 도착
+
+### 9.2 Notion 핑
+
+| 필드 | 값 |
+|------|---|
+| Node | **Notion** |
+| Resource | Database Page |
+| Operation | Get Many |
+| Database | (drop-down에서 `feed-it` 선택) |
+| Return All | false / Limit 1 |
+| Credential | §8.2에서 등록한 Notion |
+
+✅ **PASS 기준**: 에러 없이 **0건** 반환 (DB가 비어있으므로)
+⚠️ `object_not_found` → §3.3 DB share 다시 확인 / DB ID 32자 정확한지
+
+### 9.3 Firecrawl 핑 (HTTP Request)
+
+| 필드 | 값 |
+|------|---|
+| Node | **HTTP Request** |
+| Method | POST |
+| URL | `https://api.firecrawl.dev/v1/scrape` |
+| Authentication | Generic Credential Type → **Header Auth** → §8.4의 `Firecrawl API` 선택 |
+| Body Content Type | JSON |
+| Specify Body | Using JSON |
+| Body | `{"url":"https://www.anthropic.com/news","formats":["markdown"]}` |
+| Send Body | ON |
+| Send Headers | ON |
+| Header `Content-Type` | `application/json` |
+
+✅ **PASS 기준**: HTTP 200 + 응답 JSON에 `success: true` + `data.markdown` 존재
+⚠️ 401 → Header Value의 `Bearer ` prefix·공백 확인 / 402 quota 초과
+
+### 9.4 Anthropic 핑 (HTTP Request)
+
+| 필드 | 값 |
+|------|---|
+| Node | **HTTP Request** |
+| Method | POST |
+| URL | `https://api.anthropic.com/v1/messages` |
+| Authentication | Predefined Credential Type → **Anthropic API** → §8.1 credential 선택 |
+| Body Content Type | JSON |
+| Body | `{"model":"claude-sonnet-4-6","max_tokens":50,"messages":[{"role":"user","content":"한 문장으로 자기소개."}]}` |
+| Send Headers | ON |
+| Header `anthropic-version` | `2023-06-01` |
+| Header `Content-Type` | `application/json` |
+
+✅ **PASS 기준**: HTTP 200 + 응답에 `content[0].text` 한 문장 한국어
+⚠️ 401 → API Key 평문 정확한지 / 404 model → 모델 ID 오타 (`claude-sonnet-4-6` 정확히)
+
+### 9.5 마무리
+
+4개 모두 PASS면 임시 워크플로 **비활성화**(토글 OFF) 또는 삭제.
+
+> ✅ **4 PASS = 게이트 ① 진입 준비 완료**. 다음은 channels.yaml 9개 robots.txt 검증(완료) + 보고 — 그 후 워크플로 A 구성.
 
 ---
 
