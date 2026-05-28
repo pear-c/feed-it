@@ -20,6 +20,6 @@ services:
       - TZ=Asia/Seoul
     volumes:
       - ./data:/home/node/.n8n
-      - ./channels.yaml:/data/feed-it/channels.yaml:ro
-      - ./prompts:/data/feed-it/prompts:ro
+      - ./channels.yaml:/home/node/.n8n-files/channels.yaml:ro
+      - ./prompts:/home/node/.n8n-files/prompts:ro
     restart: unless-stopped
