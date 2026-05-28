@@ -199,14 +199,18 @@ docker compose logs -f n8n
 
 첫 접속 시 n8n 자체 owner 계정 생성 안내가 뜸. 본인 이메일·비밀번호 입력 (이건 n8n 내부 계정. 외부 노출 안 됨).
 
-### 7.3 Community Node 설치 (Firecrawl MCP 용)
+### 7.3 Community Node 설치 (선택 — Week 1엔 SKIP 가능)
+
+Week 1 PoC는 Firecrawl·Anthropic 모두 **HTTP Request 노드로 직접 호출** (워크플로 docs 참조). 따라서 `n8n-nodes-mcp` Community Node는 **Week 1엔 불필요**. Week 2+ Python 이식·MCP 통합 검토 단계에서 도입.
+
+지금 미리 설치해두고 싶다면:
 
 1. 좌측 메뉴 `Settings` → `Community nodes`
 2. `Install a community node` → npm 패키지명: `n8n-nodes-mcp`
 3. `I understand the risks` 체크 → `Install`
-4. 잠시 후 노드 목록 새로고침 → 새 노드 `MCP Client` 등이 보이면 성공
+4. 노드 목록에 `MCP Client` 등이 보이면 성공
 
-> 안 보이면: `docker compose restart n8n` 후 재확인. 그래도 안 되면 컨테이너 로그(`docker compose logs n8n`)에서 npm 설치 실패 메시지 확인.
+> 안 보이면 `docker compose restart n8n` 후 재확인. 컨테이너 로그(`docker compose logs n8n`)에서 npm 설치 실패 메시지 확인.
 
 ---
 
@@ -233,15 +237,23 @@ docker compose logs -f n8n
 - Access Token: `.env`의 `SLACK_BOT_TOKEN`
 - Save → `Test connection` PASS
 
-### 8.4 Firecrawl MCP
+### 8.4 Firecrawl (HTTP Header Auth)
 
-MCP 노드는 별도 credential 방식 (transport 정의):
+Firecrawl은 워크플로에서 **HTTP Request 노드로 직접 호출** (`https://api.firecrawl.dev/v1/scrape`). credential은 n8n 기본의 `Header Auth`로 등록.
 
-- Type: `MCP Client (HTTP Streamable)` 또는 stdio
-- URL / Command: Firecrawl MCP 서버 endpoint
-- Header: `Authorization: Bearer ${FIRECRAWL_API_KEY}`
+- `+ Add Credential` → 검색에 `Header Auth` 입력 → `Header Auth` 선택
+- **Name** (credential 이름): `Firecrawl API` (워크플로에서 이 이름으로 골라쓰게 됨)
+- **Header Name**: `Authorization`
+- **Header Value**: `Bearer fc-...` (`.env`의 `FIRECRAWL_API_KEY` 값에 `Bearer ` prefix 붙여서)
+- Save
 
-> Firecrawl MCP 정확한 transport 설정은 `n8n-nodes-mcp` 버전과 Firecrawl MCP 서버 배포 형태에 따라 차이 — 워크플로 만들면서 게이트 ① 직전에 사용자와 같이 확정.
+> Test 버튼은 Header Auth credential 자체에는 없음. §9 connectivity 테스트에서 임시 워크플로로 HTTP Request 1회 호출해 검증.
+
+#### 왜 MCP 안 씀?
+
+- Firecrawl이 **hosted MCP endpoint를 제공하지 않음** (2026-05 기준). self-host(`npx firecrawl-mcp`)는 stdio/SSE/HTTP transport 별도 설정 필요 — PoC 단계엔 과함
+- HTTP Request 직접 호출이 더 단순·투명 (응답 JSON 디버깅 쉬움)
+- Week 2+ Python 이식·MCP 통합 검토 단계에서 SSE 컨테이너 별도 띄워 재평가
 
 ---
 
