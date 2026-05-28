@@ -43,7 +43,7 @@ n8n (로컬 Docker)
 | 축 | 예시 |
 |----|------|
 | AI / LLM / 에이전트 | Anthropic, OpenAI, Simon Willison, Hugging Face |
-| DevOps / 인프라 / 클라우드 | CNCF, HashiCorp, AWS |
+| DevOps / 인프라 / 클라우드 | CNCF, HashiCorp |
 | 한국 IT / 채용 / 스타트업 | 우아한형제들, 토스 |
 
 ---

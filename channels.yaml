@@ -12,8 +12,12 @@
 #   - domain : ai | devops | kr_tech
 #   - enabled: true | false (false면 워크플로가 skip)
 #
-# 현재 9 채널 (AI 4 + DevOps 3 + kr_tech 2 / newsletter 0개).
+# 현재 8 채널 (AI 4 + DevOps 2 + kr_tech 2 / newsletter 0개).
 # newsletter 추가는 Week 2 가치 검증 후 (kube-weekly · import-ai 등 후보).
+#
+# robots.txt 검증 (2026-05-28):
+#   - 8개 모두 자동 수집 허용 (User-agent: * 기준)
+#   - aws-news (https://aws.amazon.com/blogs/aws/) 는 robots.txt `Disallow: /blogs/` 명시 차단으로 제거됨
 
 # ─────────────────────────────────────────────
 # AI / LLM / 에이전트 (4)
@@ -44,7 +48,7 @@
   enabled: false
 
 # ─────────────────────────────────────────────
-# DevOps / 인프라 / 클라우드 (3)
+# DevOps / 인프라 / 클라우드 (2)
 # ─────────────────────────────────────────────
 
 - name: cncf-blog
@@ -55,12 +59,6 @@
 
 - name: hashicorp-blog
   url: https://www.hashicorp.com/blog
-  type: blog
-  domain: devops
-  enabled: false
-
-- name: aws-news
-  url: https://aws.amazon.com/blogs/aws/
   type: blog
   domain: devops
   enabled: false
