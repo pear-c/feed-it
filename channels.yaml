@@ -27,7 +27,7 @@
   url: https://www.anthropic.com/news
   type: blog
   domain: ai
-  enabled: false
+  enabled: true
 
 - name: openai-news
   url: https://openai.com/news/
