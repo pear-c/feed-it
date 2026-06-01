@@ -383,6 +383,47 @@
           "name": "Slack account"
         }
       }
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "T5qLzVziwvQXW9GE",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/T5qLzVziwvQXW9GE",
+          "cachedResultName": "summarize"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [
+            ""
+          ],
+          "schema": [
+            {
+              "id": "",
+              "displayName": "",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        960,
+        800
+      ],
+      "id": "39cd9fc4-bb3a-4d72-b7db-219829d304d9",
+      "name": "summarize호출"
     }
   ],
   "pinData": {},
@@ -562,6 +603,17 @@
           }
         ]
       ]
+    },
+    "Send a message": {
+      "main": [
+        [
+          {
+            "node": "summarize호출",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
@@ -569,7 +621,7 @@
     "executionOrder": "v1",
     "binaryMode": "separate"
   },
-  "versionId": "ec0748b6-c520-46ae-a3e4-a35c0ac9a02c",
+  "versionId": "34b4fbf2-2561-494a-a6a0-e7b9b411537f",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "bcf1e8d5dad631d3d2980644cd5dae9addb35c255204e578ab9d57198eaf115b"

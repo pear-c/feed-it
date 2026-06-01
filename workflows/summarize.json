@@ -1,0 +1,456 @@
+{
+  "name": "summarize",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -80,
+        -48
+      ],
+      "id": "6e291640-a65b-44e1-9352-fbd9c3078906",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -80,
+        144
+      ],
+      "id": "8b6c735a-48ac-461f-b98e-280a8362ffbe",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "getAll",
+        "databaseId": {
+          "__rl": true,
+          "value": "36ef030d-d17d-805e-ade4-c319b06eb1d9",
+          "mode": "list",
+          "cachedResultName": "feed-it",
+          "cachedResultUrl": "https://www.notion.so/36ef030dd17d805eade4c319b06eb1d9"
+        },
+        "limit": 20,
+        "simple": false,
+        "filterType": "manual",
+        "filters": {
+          "conditions": [
+            {
+              "key": "IsMetadataFilled|checkbox",
+              "condition": "equals"
+            }
+          ]
+        },
+        "options": {
+          "sort": {
+            "sortValue": [
+              {
+                "key": "CollectedAt|date",
+                "direction": "ascending"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        192,
+        48
+      ],
+      "id": "e980341b-5070-43a9-80ac-eb27eebaae84",
+      "name": "Notion조회",
+      "credentials": {
+        "notionApi": {
+          "id": "Jwx3YSz3B3ysL1c2",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.firecrawl.dev/v1/scrape",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"url\": \"{{ $json.properties.URL.url }}\", \"formats\": [\"markdown\"], \"waitFor\": 2000\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        400,
+        48
+      ],
+      "id": "8e78cfbd-0698-434c-9b95-af08b5d0c4fc",
+      "name": "Firecrawl본문",
+      "retryOnFail": true,
+      "waitBetweenTries": 3000,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "OuI3Efz8v0rjtLf3",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fileSelector": "/home/node/.n8n-files/prompts/summarize_ko.md",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1.1,
+      "position": [
+        608,
+        48
+      ],
+      "id": "b78734a4-35b9-48a4-a074-669c764a8fef",
+      "name": "프롬프트읽기"
+    },
+    {
+      "parameters": {
+        "jsCode": "const notionRows = $('Notion조회').all();\nconst fcItems    = $('Firecrawl본문').all();\nconst promptItems = $input.all();   // 프롬프트읽기 출력 (각 item에 binary)\n\nconst out = [];\nfor (let i = 0; i < promptItems.length; i++) {\n  const pkey = Object.keys(promptItems[i].binary || {})[0];\n  let prompt = (await this.helpers.getBinaryDataBuffer(i, pkey)).toString('utf-8');\n  prompt = prompt.replace(/^---[\\s\\S]*?---\\s*/, '').trim();   // frontmatter 제거\n\n  const props = notionRows[i].json.properties;\n  const fc    = fcItems[i].json;\n  const user_content =\n    `channel.name: ${props.Channel?.select?.name || ''}\\n` +\n    `channel.domain: ${props.Domain?.multi_select?.[0]?.name || ''}\\n` +\n    `title: ${props.Title?.title?.[0]?.plain_text || ''}\\n` +\n    `url: ${props.URL?.url || ''}\\n\\n` +\n    `body_markdown:\\n${(fc.data && fc.data.markdown) || ''}`;\n\n  out.push({ json: {\n    system: prompt,\n    user_content,\n    _pageId: notionRows[i].json.id,\n    _title: props.Title?.title?.[0]?.plain_text || '',\n    _url: props.URL?.url || '',\n  }});\n}\nreturn out;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        816,
+        48
+      ],
+      "id": "17da300f-2e0d-4d5e-ad25-fb38ff07cb65",
+      "name": "payload빌드S"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "anthropicApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"claude-sonnet-4-6\",\n  \"max_tokens\": 1500,\n  \"system\": {{ JSON.stringify($json.system) }},\n  \"messages\": [\n    { \"role\": \"user\", \"content\": {{ JSON.stringify($json.user_content) }} }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1024,
+        48
+      ],
+      "id": "e8912916-7073-42e0-9671-72799c1385b6",
+      "name": "Claude요약",
+      "retryOnFail": true,
+      "waitBetweenTries": 3000,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "OuI3Efz8v0rjtLf3",
+          "name": "Header Auth account"
+        },
+        "anthropicApi": {
+          "id": "7ZsUMGRBAlZbAmV8",
+          "name": "Anthropic account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const ins  = $input.all();             // Claude 응답들\nconst meta = $('payload빌드S').all();  // _pageId 등\nconst out = [];\nfor (let i = 0; i < ins.length; i++) {\n  let text = ((ins[i].json.content && ins[i].json.content[0] && ins[i].json.content[0].text) || '').trim();\n  text = text.replace(/^```json\\s*/i, '').replace(/^```\\s*/i, '').replace(/```\\s*$/i, '').trim();\n  const m = meta[i].json;\n  try {\n    const obj = JSON.parse(text);\n    obj.summary_short = String(obj.summary_short || '').slice(0, 250);\n    if (!Array.isArray(obj.tags)) obj.tags = [];\n    obj.author = obj.author || '';\n    obj.summary_long = obj.summary_long || '';\n    out.push({ json: { ...obj, _pageId: m._pageId, _title: m._title, _url: m._url } });\n  } catch (e) {\n    out.push({ json: { _parse_error: e.message, raw: text.slice(0, 500), _pageId: m._pageId, _title: m._title, _url:\nm._url } });\n  }\n}\nreturn out;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1232,
+        48
+      ],
+      "id": "db472eb8-aa87-4e33-bb51-d9972c4818c1",
+      "name": "JSON파싱S"
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all().map((it) => {\n  const o = it.json;\n  const long = o.summary_long || o.summary_short || '(요약 없음)';\n  const chunks = [];\n  for (let i = 0; i < long.length; i += 1500) chunks.push(long.slice(i, i + 1500));\n  const blocks = chunks.map((c) => ({\n    object: 'block', type: 'paragraph',\n    paragraph: { rich_text: [{ type: 'text', text: { content: c } }] },\n  }));\n  const _tagsML = (o.tags || []).map((t) => ({ name: String(t) }));   // ← 추가\n  return { json: { ...o, _blocks: blocks, _tagsML } };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1408,
+        48
+      ],
+      "id": "d062f610-22f2-4512-88f1-f4bc6bdc9db0",
+      "name": "본문분할"
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://api.notion.com/v1/blocks/{{ $json._pageId }}/children",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "notionApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Notion-Version",
+              "value": "2022-06-28"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"children\": {{ JSON.stringify($json._blocks) }}\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1616,
+        48
+      ],
+      "id": "3057ec63-67ad-4534-9dab-26f736f66ba6",
+      "name": "Notion본문적재",
+      "credentials": {
+        "notionApi": {
+          "id": "Jwx3YSz3B3ysL1c2",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://api.notion.com/v1/pages/{{ $('본문분할').item.json._pageId }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "notionApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Notion-Version",
+              "value": "2022-06-28"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"properties\": {\n    \"Summary\": { \"rich_text\": [ { \"text\": { \"content\": {{ JSON.stringify($('본문분할').item.json.summary_short || '')\n}} } } ] },\n    \"Author\": { \"rich_text\": [ { \"text\": { \"content\": {{ JSON.stringify($('본문분할').item.json.author || '') }} } } ]\n},\n    \"Tags\": { \"multi_select\": {{ JSON.stringify($('본문분할').item.json._tagsML) }} },\n    \"IsMetadataFilled\": { \"checkbox\": true }\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1824,
+        48
+      ],
+      "id": "2a14444e-66f8-42e0-a4e9-6cc096047573",
+      "name": "Notion속성마감",
+      "credentials": {
+        "notionApi": {
+          "id": "Jwx3YSz3B3ysL1c2",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $('본문분할').all().map((i) => i.json);\nconst success = items.filter((o) => !o._parse_error);\nconst failed  = items.filter((o) => o._parse_error);\nconst ts = $now.setZone('Asia/Seoul').toFormat('yyyy-MM-dd HH:mm');\n\nconst lines = success.slice(0, 30).map((o) => `• <${o._url}|${o._title}>\\n   ${o.summary_short}`);\nconst text =\n  `:newspaper: *feed-it 요약 다이제스트* (${ts} KST)\\n` +\n  `신규 ${success.length}건${failed.length ? ` / 실패 ${failed.length}건` : ''}\\n\\n` +\n  lines.join('\\n\\n');\n\nreturn [{ json: { text, success_count: success.length, failed_count: failed.length } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2032,
+        48
+      ],
+      "id": "6ea58458-598d-49f4-8d59-773269242a60",
+      "name": "다이제스트준비"
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0B6PC7H3A5",
+          "mode": "id"
+        },
+        "text": "={{ $json.text }}",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.5,
+      "position": [
+        2240,
+        48
+      ],
+      "id": "9f09e010-48b3-46ac-a2e4-dd528c42fbee",
+      "name": "Slack다이제스트",
+      "webhookId": "d2d62cc9-ae3f-42c1-b9a9-9932f25d98ce",
+      "credentials": {
+        "slackApi": {
+          "id": "wPzdyUz1ollEFBOQ",
+          "name": "Slack account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Notion조회",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Notion조회",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notion조회": {
+      "main": [
+        [
+          {
+            "node": "Firecrawl본문",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Firecrawl본문": {
+      "main": [
+        [
+          {
+            "node": "프롬프트읽기",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "프롬프트읽기": {
+      "main": [
+        [
+          {
+            "node": "payload빌드S",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "payload빌드S": {
+      "main": [
+        [
+          {
+            "node": "Claude요약",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude요약": {
+      "main": [
+        [
+          {
+            "node": "JSON파싱S",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "JSON파싱S": {
+      "main": [
+        [
+          {
+            "node": "본문분할",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "본문분할": {
+      "main": [
+        [
+          {
+            "node": "Notion본문적재",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notion본문적재": {
+      "main": [
+        [
+          {
+            "node": "Notion속성마감",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notion속성마감": {
+      "main": [
+        [
+          {
+            "node": "다이제스트준비",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "다이제스트준비": {
+      "main": [
+        [
+          {
+            "node": "Slack다이제스트",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "b59be07d-60ff-42d1-8979-e77307a61064",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "bcf1e8d5dad631d3d2980644cd5dae9addb35c255204e578ab9d57198eaf115b"
+  },
+  "id": "T5qLzVziwvQXW9GE",
+  "tags": []
+}
