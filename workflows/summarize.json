@@ -274,7 +274,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const items = $('본문분할').all().map((i) => i.json);\nconst success = items.filter((o) => !o._parse_error);\nconst failed  = items.filter((o) => o._parse_error);\nconst ts = $now.setZone('Asia/Seoul').toFormat('yyyy-MM-dd HH:mm');\n\nconst lines = success.slice(0, 30).map((o) => `• <${o._url}|${o._title}>\\n   ${o.summary_short}`);\nconst text =\n  `:newspaper: *feed-it 요약 다이제스트* (${ts} KST)\\n` +\n  `신규 ${success.length}건${failed.length ? ` / 실패 ${failed.length}건` : ''}\\n\\n` +\n  lines.join('\\n\\n');\n\nreturn [{ json: { text, success_count: success.length, failed_count: failed.length } }];"
+        "jsCode": "const items = $('본문분할').all().map((i) => i.json);\nconst success = items.filter((o) => !o._parse_error);\nconst failed  = items.filter((o) => o._parse_error);\nconst ts = $now.setZone('Asia/Seoul').toFormat('yyyy-MM-dd HH:mm');\nconst DB_URL = 'https://www.notion.so/36ef030dd17d805eade4c319b06eb1d9';\nconst esc = (s) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\n\n// Block Kit 컴팩트 다이제스트 (Week 1.5 M3)\nconst CAP = 40; // header+context+divider+divider+footer=5, 글당 1 → 50블록 한계 안전\nconst shown = success.slice(0, CAP);\n\nconst blocks = [\n  { type: 'header', text: { type: 'plain_text', text: `📰 feed-it 다이제스트 · ${ts} KST`, emoji: true } },\n  { type: 'context', elements: [{ type: 'mrkdwn', text: `신규 *${success.length}*건${failed.length ? ` · 실패 ${failed.length}건` : ''}` }] },\n  { type: 'divider' },\n];\nshown.forEach((o) => {\n  const t = esc(o._title);\n  const s = esc(o.summary_short || '');\n  blocks.push({ type: 'section', text: { type: 'mrkdwn', text: `*<${o._url}|${t}>*\\n${s}` } });\n});\nif (success.length > CAP) {\n  blocks.push({ type: 'context', elements: [{ type: 'mrkdwn', text: `…외 ${success.length - CAP}건은 Notion에서 확인` }] });\n}\nblocks.push({ type: 'divider' });\nblocks.push({ type: 'context', elements: [{ type: 'mrkdwn', text: `📂 전체 보기: <${DB_URL}|feed-it Notion DB>` }] });\n\nconst text = `feed-it 다이제스트 · 신규 ${success.length}건${failed.length ? ` / 실패 ${failed.length}건` : ''}`;\nreturn [{ json: { blocks, text, success_count: success.length, failed_count: failed.length } }];\n"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -287,17 +287,17 @@
     },
     {
       "parameters": {
-        "select": "channel",
-        "channelId": {
-          "__rl": true,
-          "value": "C0B6PC7H3A5",
-          "mode": "id"
-        },
-        "text": "={{ $json.text }}",
-        "otherOptions": {}
+        "method": "POST",
+        "url": "https://slack.com/api/chat.postMessage",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "slackApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={ \"channel\": \"C0B6PC7H3A5\", \"text\": {{ JSON.stringify($json.text) }}, \"blocks\": {{ JSON.stringify($json.blocks) }} }",
+        "options": {}
       },
-      "type": "n8n-nodes-base.slack",
-      "typeVersion": 2.5,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
       "position": [
         2240,
         48
