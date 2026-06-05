@@ -61,7 +61,7 @@
           "conditions": [
             {
               "id": "1bab1889-fa25-473d-9317-94ee374e9128",
-              "leftValue": true,
+              "leftValue": "={{ $json.enabled }}",
               "rightValue": "",
               "operator": {
                 "type": "boolean",
@@ -158,7 +158,14 @@
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={\n  \"model\": \"claude-sonnet-4-6\",\n  \"max_tokens\": 2000,\n  \"system\": {{ JSON.stringify($json.system) }},\n  \"messages\": [\n    { \"role\": \"user\", \"content\": {{ JSON.stringify($json.user_content) }} }\n  ]\n}",
-        "options": {}
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 12000
+            }
+          }
+        }
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
@@ -237,7 +244,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const candidates = $input.all()\n  .map(it => it.json)\n  .filter(c => c.url && !c._skip && !c._parse_error);\nreturn [{ json: { candidates } }];"
+        "jsCode": "// 후보 수집 + 결정론적 7일 윈도우 필터 (Week 1.5)\n// published_at 이 today_kst - 7일 이전이면 제외. null/형식이상은 유지(요약 단계 재확인).\nconst nowKst = new Date(Date.now() + 9 * 3600 * 1000);\nconst cutoff = new Date(nowKst.getTime() - 7 * 24 * 3600 * 1000)\n  .toISOString().slice(0, 10); // YYYY-MM-DD (KST 기준 today-7)\n\nconst candidates = $input.all()\n  .map(it => it.json)\n  .filter(c => c.url && !c._skip && !c._parse_error)\n  .filter(c => {\n    if (!c.published_at) return true;                 // 게시일 미상 → 유지\n    const d = String(c.published_at).slice(0, 10);\n    if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(d)) return true;   // 형식 이상 → 유지\n    return d >= cutoff;                               // 최근 7일 이내만\n  });\nreturn [{ json: { candidates, _cutoff: cutoff } }];\n"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -630,7 +637,7 @@
     "callerPolicy": "workflowsFromSameOwner",
     "availableInMCP": false
   },
-  "versionId": "15bdf403-bd8f-4f80-b553-7748fa5c05ff",
+  "versionId": "a9da6694-cb05-4352-b841-6d5b63190e25",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "bcf1e8d5dad631d3d2980644cd5dae9addb35c255204e578ab9d57198eaf115b"
