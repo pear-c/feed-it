@@ -61,7 +61,7 @@
   url: https://www.hashicorp.com/blog
   type: blog
   domain: devops
-  enabled: false
+  enabled: true
 
 # ─────────────────────────────────────────────
 # 한국 IT / 채용 / 스타트업 (2)
@@ -77,4 +77,4 @@
   url: https://toss.tech/
   type: blog
   domain: kr_tech
-  enabled: false
+  enabled: true
