@@ -2,7 +2,7 @@
 
 > AI · DevOps · 한국 IT 분야의 새 글을 주 3회 자동으로 모아 한국어로 요약해서 Notion에 적재하고 Slack으로 알림 보내는 **개인 자동화 시스템**.
 
-<sub>Status: 🚧 Week 1 WIP · Personal use only · Korean output</sub>
+<sub>Status: ✅ Week 1 완료 · 🚧 Week 1.5 운영 안정화(6채널 가동) · Personal use only · Korean output</sub>
 
 ---
 
@@ -109,11 +109,12 @@ start http://localhost:5678
 
 | Week | 목표 | 상태 |
 |------|------|------|
-| 1 | n8n PoC — 수집·요약·에러 모니터링 워크플로 동작 | 🚧 진행 중 |
+| 1 | n8n PoC — 수집·요약·에러 모니터링 워크플로 동작 | ✅ 완료 (`tag week1`) |
+| 1.5 | 운영 안정화 — Filter 버그 수정·7일 결정론 필터·Batching·Block Kit 다이제스트·채널 6개 | 🚧 진행 중 (고빈도 2채널·cron 자동화 잔여) |
 | 2 | 1~2주 운영 회고 → LangGraph 이식 판단 | ⏳ |
 | 3+ | LangGraph 그래프화 · 채널 확장 · MCP 노출 등 | ⏳ |
 
-Week 2 진입 판단 기준은 `.claude/tasks/feed-it-week1/PLAN.md` §10 참조.
+Week 1.5 작업은 `.claude/tasks/feed-it-week1.5/`, Week 2 진입 판단 기준은 `.claude/tasks/feed-it-week1/PLAN.md` §10 참조.
 
 ---
 
