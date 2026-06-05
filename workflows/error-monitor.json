@@ -1,0 +1,93 @@
+{
+  "name": "error-monitor",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "4f34f145-e256-41b3-89b8-5f5974d69c7b",
+      "name": "Error Trigger"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.first().json;\nconst workflowName = data.workflow?.name || 'unknown';\nconst failedNode = data.lastNodeExecuted || 'unknown';\nconst errMsg = data.execution?.error?.message || data.executionError?.message || '(no message)';\nconst executionUrl = data.execution?.url || '';\n\nconst text = [\n  ':rotating_light: *feed-it 워크플로 실패*',\n  `*워크플로*: \\`${workflowName}\\``,\n  `*실패 노드*: \\`${failedNode}\\``,\n  `*에러*: \\`${String(errMsg).slice(0, 500)}\\``,\n  executionUrl ? `*디버깅*: <${executionUrl}|n8n Execution>` : '',\n].filter(Boolean).join('\\n');\n\nreturn [{ json: { text } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "6072329e-a0b9-456e-ad1a-bc37d915ea00",
+      "name": "에러포맷"
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0B7FRP4BDE",
+          "mode": "id"
+        },
+        "text": "={{ $json.text }}",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.5,
+      "position": [
+        416,
+        0
+      ],
+      "id": "d8c09080-85f0-40b9-8f42-41e5dc59f012",
+      "name": "Slack알림",
+      "webhookId": "8729fa8f-b45e-40fc-9178-dc8d0e205c8f",
+      "credentials": {
+        "slackApi": {
+          "id": "wPzdyUz1ollEFBOQ",
+          "name": "Slack account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "에러포맷",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "에러포맷": {
+      "main": [
+        [
+          {
+            "node": "Slack알림",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "ad542e14-28e8-4e62-b608-b1b66f620f46",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "bcf1e8d5dad631d3d2980644cd5dae9addb35c255204e578ab9d57198eaf115b"
+  },
+  "id": "rVKyCGfO43sbJYFf",
+  "tags": []
+}
