@@ -168,6 +168,9 @@
       ],
       "id": "adfe3dbb-29e0-4e35-9934-d65d3a8a0382",
       "name": "Claude추출",
+      "retryOnFail": true,
+      "maxTries": 4,
+      "waitBetweenTries": 5000,
       "credentials": {
         "httpHeaderAuth": {
           "id": "OuI3Efz8v0rjtLf3",
@@ -181,7 +184,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const resp = $input.first().json;\nlet text = ((resp.content && resp.content[0] && resp.content[0].text) || '').trim();\n// 마크다운 코드블록 제거 (conventions §1.6 안전망)\ntext = text.replace(/^```json\\s*/i, '').replace(/^```\\s*/i, '').replace(/```\\s*$/i, '').trim();\n\nconst channel = $('payload빌드').first().json.channel;\n\nlet arr;\ntry {\n  arr = JSON.parse(text);\n  if (!Array.isArray(arr)) throw new Error('JSON이 배열 아님');\n} catch (e) {\n  return [{ json: { _parse_error: e.message, raw: text.slice(0, 500), channel } }];\n}\nif (arr.length === 0) return [];\nreturn arr.map((item) => ({ json: { ...item, channel } }));"
+        "jsCode": "const ins  = $input.all();            // Claude 응답들 (채널 수만큼)\nconst meta = $('payload빌드').all();  // channel 메타\nconst out = [];\nfor (let i = 0; i < ins.length; i++) {\n  let text = ((ins[i].json.content && ins[i].json.content[0] && ins[i].json.content[0].text) || '').trim();\n  text = text.replace(/^```json\\s*/i, '').replace(/^```\\s*/i, '').replace(/```\\s*$/i, '').trim();\n  const channel = meta[i].json.channel;\n  try {\n    const arr = JSON.parse(text);\n    if (!Array.isArray(arr)) throw new Error('not array');\n    arr.forEach((item) => out.push({ json: { ...item, channel } }));   // 채널별 글을 한 리스트로 평탄화\n  } catch (e) {\n    out.push({ json: { _parse_error: e.message, raw: text.slice(0, 500), channel } });\n  }\n}\nreturn out;"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -207,7 +210,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const pkey = Object.keys($input.first().binary || {})[0];\nif (!pkey) throw new Error('프롬프트 binary 없음 — 프롬프트읽기 노드 확인');\nlet prompt = (await this.helpers.getBinaryDataBuffer(0, pkey)).toString('utf-8');\nprompt = prompt.replace(/^---[\\s\\S]*?---\\s*/, '').trim();   // frontmatter 제거\n\nconst set = $('채널준비').first().json;\nconst fc  = $('Firecrawl수집').first().json;\nconst channel = set.channel;\nconst today_kst = set.today_kst;\nconst markdown = (fc.data && fc.data.markdown) || '';\n\nconst user_content =\n  `channel.name: ${channel.name}\\n` +\n  `channel.type: ${channel.type}\\n` +\n  `channel.domain: ${channel.domain}\\n` +\n  `today_kst: ${today_kst}\\n\\n` +\n  `page_markdown:\\n${markdown}`;\n\nreturn [{ json: { system: prompt, user_content, channel } }];"
+        "jsCode": "const channels    = $('채널준비').all();\nconst fcItems     = $('Firecrawl수집').all();\nconst promptItems = $input.all();   // 프롬프트읽기 출력\n\nconst out = [];\nfor (let i = 0; i < promptItems.length; i++) {\n  const pkey = Object.keys(promptItems[i].binary || {})[0];\n  let prompt = (await this.helpers.getBinaryDataBuffer(i, pkey)).toString('utf-8');\n  prompt = prompt.replace(/^---[\\s\\S]*?---\\s*/, '').trim();\n\n  const ch = channels[i].json;          // { today_kst, channel }\n  const fc = fcItems[i].json;\n  const channel = ch.channel;\n  const user_content =\n    `channel.name: ${channel.name}\\n` +\n    `channel.type: ${channel.type}\\n` +\n    `channel.domain: ${channel.domain}\\n` +\n    `today_kst: ${ch.today_kst}\\n\\n` +\n    `page_markdown:\\n${(fc.data && fc.data.markdown) || ''}`;\n\n  out.push({ json: { system: prompt, user_content, channel } });\n}\nreturn out;"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -627,7 +630,7 @@
     "callerPolicy": "workflowsFromSameOwner",
     "availableInMCP": false
   },
-  "versionId": "74d965fb-5846-4ada-84ce-f43fedad42a4",
+  "versionId": "15bdf403-bd8f-4f80-b553-7748fa5c05ff",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "bcf1e8d5dad631d3d2980644cd5dae9addb35c255204e578ab9d57198eaf115b"

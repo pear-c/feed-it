@@ -117,7 +117,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const notionRows = $('Notion조회').all();\nconst fcItems    = $('Firecrawl본문').all();\nconst promptItems = $input.all();   // 프롬프트읽기 출력 (각 item에 binary)\n\nconst out = [];\nfor (let i = 0; i < promptItems.length; i++) {\n  const pkey = Object.keys(promptItems[i].binary || {})[0];\n  let prompt = (await this.helpers.getBinaryDataBuffer(i, pkey)).toString('utf-8');\n  prompt = prompt.replace(/^---[\\s\\S]*?---\\s*/, '').trim();   // frontmatter 제거\n\n  const props = notionRows[i].json.properties;\n  const fc    = fcItems[i].json;\n  const user_content =\n    `channel.name: ${props.Channel?.select?.name || ''}\\n` +\n    `channel.domain: ${props.Domain?.multi_select?.[0]?.name || ''}\\n` +\n    `title: ${props.Title?.title?.[0]?.plain_text || ''}\\n` +\n    `url: ${props.URL?.url || ''}\\n\\n` +\n    `body_markdown:\\n${(fc.data && fc.data.markdown) || ''}`;\n\n  out.push({ json: {\n    system: prompt,\n    user_content,\n    _pageId: notionRows[i].json.id,\n    _title: props.Title?.title?.[0]?.plain_text || '',\n    _url: props.URL?.url || '',\n  }});\n}\nreturn out;"
+        "jsCode": "const notionRows = $('Notion조회').all();\nconst fcItems    = $('Firecrawl본문').all();\nconst promptItems = $input.all();   // 프롬프트읽기 출력 (각 item에 binary)\n\nconst out = [];\nfor (let i = 0; i < promptItems.length; i++) {\n  const pkey = Object.keys(promptItems[i].binary || {})[0];\n  let prompt = (await this.helpers.getBinaryDataBuffer(i, pkey)).toString('utf-8');\n  prompt = prompt.replace(/^---[\\s\\S]*?---\\s*/, '').trim();   // frontmatter 제거\n\n  const props = notionRows[i].json.properties;\n  const fc    = fcItems[i].json;\n  const user_content =\n    `channel.name: ${props.Channel?.select?.name || ''}\\n` +\n    `channel.domain: ${props.Domain?.multi_select?.[0]?.name || ''}\\n` +\n    `title: ${props.Title?.title?.[0]?.plain_text || ''}\\n` +\n    `url: ${props.URL?.url || ''}\\n\\n` +\n    `body_markdown:\\n${((fc.data && fc.data.markdown) || '').slice(0, 12000)}`;\n\n  out.push({ json: {\n    system: prompt,\n    user_content,\n    _pageId: notionRows[i].json.id,\n    _title: props.Title?.title?.[0]?.plain_text || '',\n    _url: props.URL?.url || '',\n  }});\n}\nreturn out;"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -146,7 +146,14 @@
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={\n  \"model\": \"claude-sonnet-4-6\",\n  \"max_tokens\": 1500,\n  \"system\": {{ JSON.stringify($json.system) }},\n  \"messages\": [\n    { \"role\": \"user\", \"content\": {{ JSON.stringify($json.user_content) }} }\n  ]\n}",
-        "options": {}
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 12000
+            }
+          }
+        }
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
@@ -450,7 +457,7 @@
     "callerPolicy": "workflowsFromSameOwner",
     "availableInMCP": false
   },
-  "versionId": "b59be07d-60ff-42d1-8979-e77307a61064",
+  "versionId": "a3c3d4ae-c936-41c2-9abd-f1807cf21c3f",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "bcf1e8d5dad631d3d2980644cd5dae9addb35c255204e578ab9d57198eaf115b"

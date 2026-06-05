@@ -33,7 +33,7 @@
   url: https://openai.com/news/
   type: blog
   domain: ai
-  enabled: false
+  enabled: true
 
 - name: simon-willison
   url: https://simonwillison.net/
@@ -55,7 +55,7 @@
   url: https://www.cncf.io/blog/
   type: blog
   domain: devops
-  enabled: false
+  enabled: true
 
 - name: hashicorp-blog
   url: https://www.hashicorp.com/blog
@@ -71,7 +71,7 @@
   url: https://techblog.woowahan.com/
   type: blog
   domain: kr_tech
-  enabled: false
+  enabled: true
 
 - name: toss-tech
   url: https://toss.tech/
