@@ -217,6 +217,37 @@ docker compose restart n8n
 
 ---
 
+## Week 1.5 운영 현황 (2026-06-05)
+
+### 활성 채널 (6 / 8)
+
+| 도메인 | 활성 | 보류 |
+|--------|------|------|
+| ai | anthropic-news · openai-news | simon-willison · huggingface-blog (고빈도, 크레딧 충전 후) |
+| devops | cncf-blog · hashicorp-blog | — |
+| kr_tech | woowahan-tech · toss-tech | — |
+
+> simon-willison·huggingface-blog는 고빈도(7일 내 ~12-13건/채널)라 예산 보호 위해 보류. Anthropic 크레딧 충전 후 enable.
+
+### 비용 추세 (추정 — 정확값은 console.anthropic.com 확인)
+
+- Week 1.5 작업 중 누적 소모 ~$1.4 (88-run + 18-run + 멱등성 재실행 + 6채널 run + 3건 재요약)
+- 잔여 추정 ~$2.1. 6채널 주3회 정상 운영 시 주 ~$0.5~0.7 추정 → 약 3주분
+- **충전 트리거**: 잔여 $1 미만, 또는 고빈도 2채널 enable 직전
+
+### 안정화 반영
+
+- collect: enabled 필터 버그 수정 + 7일 결정론적 필터 + Claude Batching(1/12s)
+- summarize: 다이제스트 Block Kit 컴팩트 (HTTP chat.postMessage 직접)
+- 새 함정 conventions §7.18(Filter 상수)·§7.19(LLM→결정론 필터)·§7.20(Slack HTTP)
+
+### 미적용 (이번 범위 외)
+
+- ④ cron 월/수/토 09:00 자동 발화 검증 — 워크플로 Active 전환 후 실측 (현재 수동 Test 실행만)
+- ⑤ 읽은 글·비용 자동 기록 루틴 — Week 2 판단 근거 수집용
+
+---
+
 ## 참고
 
 - [setup.md](setup.md) — 0부터 첫 실행까지
